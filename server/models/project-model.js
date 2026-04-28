@@ -17,11 +17,29 @@ const projectSchema = new mongoose.Schema({
         required: true
     }],
     imageUrl: {
-        type: String,
+        url: String,
+        public_id: String,
         required: true
     },
-    liveUrl: String,
-    githubUrl: String,
+    liveUrl: {
+        type: String,
+        match: [
+            /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+            'Please add a valid URL'
+        ]
+    },
+    githubUrl: {
+        type: String,
+        match: [
+            /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/,
+            'Please add a valid URL'
+        ]
+    },
+    category: {
+        type: String,
+        enum: ['fullstack', 'frontend', 'backend', 'mobile', 'other'],
+        default: 'frontend'
+    },
     featured: {
         type: Boolean,
         default: false
