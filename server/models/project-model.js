@@ -19,7 +19,6 @@ const projectSchema = new mongoose.Schema({
     imageUrl: {
         url: String,
         public_id: String,
-        required: true
     },
     liveUrl: {
         type: String,

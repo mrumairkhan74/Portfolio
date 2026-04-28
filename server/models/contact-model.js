@@ -16,10 +16,10 @@ const contactSchema = new mongoose.Schema({
         required: [true, 'Please add a message'],
         maxlength: [1000, 'Message cannot be more than 1000 characters']
     },
-    read: {
-        type: Boolean,
-        default: false
-    },
+    // read: {
+    //     type: Boolean,
+    //     default: false
+    // },
     createdAt: {
         type: Date,
         default: Date.now
