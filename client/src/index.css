@@ -1,1 +1,156 @@
-@import "tailwindcss"
+@import "tailwindcss";
+
+/* Theme variables */
+@layer base {
+  :root {
+    /* Light theme - warm, elegant, still cyber */
+    --bg-primary: 248 250 252;
+    --bg-secondary: 255 255 255;
+    --bg-card: 255 255 255;
+    --text-primary: 15 23 42;
+    --text-secondary: 71 85 105;
+    --border-color: 226 232 240;
+    
+    /* Light theme accent adjustments - more vibrant */
+    --accent-cyan: 0 180 200;
+    --accent-purple: 120 80 220;
+    --accent-pink: 220 60 140;
+    --accent-glow: 0.15;
+  }
+
+  .dark {
+    --bg-primary: 10 10 15;
+    --bg-secondary: 17 24 39;
+    --bg-card: 17 24 39;
+    --text-primary: 255 255 255;
+    --text-secondary: 156 163 175;
+    --border-color: 255 255 255;
+    
+    /* Dark theme - neon bright */
+    --accent-cyan: 0 240 255;
+    --accent-purple: 139 92 246;
+    --accent-pink: 236 72 153;
+    --accent-glow: 0.3;
+  }
+}
+
+@theme {
+  /* Custom colors */
+  --color-bg-primary: rgb(var(--bg-primary));
+  --color-bg-secondary: rgb(var(--bg-secondary));
+  --color-bg-card: rgb(var(--bg-card));
+  --color-text-primary: rgb(var(--text-primary));
+  --color-text-secondary: rgb(var(--text-secondary));
+  --color-border: rgb(var(--border-color) / 0.1);
+  
+  /* Cyber accent colors - theme aware */
+  --color-cyber-cyan: rgb(var(--accent-cyan));
+  --color-cyber-purple: rgb(var(--accent-purple));
+  --color-cyber-pink: rgb(var(--accent-pink));
+  
+  /* Animations */
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-slide-up: slideUp 0.5s ease-out;
+  
+  @keyframes glow {
+    0%, 100% { text-shadow: 0 0 10px rgba(var(--accent-cyan), var(--accent-glow)); }
+    50% { text-shadow: 0 0 20px rgba(var(--accent-cyan), calc(var(--accent-glow) * 1.5)); }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-cyber-cyan), var(--color-cyber-purple));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-cyber-purple), var(--color-cyber-pink));
+}
+
+/* Glass effect utility */
+.glass {
+  background: rgba(var(--bg-secondary), 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(var(--accent-cyan), 0.15);
+}
+
+/* Gradient text utility */
+.gradient-text {
+  background: linear-gradient(135deg, var(--color-cyber-cyan), var(--color-cyber-purple), var(--color-cyber-pink));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Add these keyframes to your existing CSS */
+@keyframes borderRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100px) translateX(50px);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-border {
+  animation: borderRotate 2s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s ease-in-out infinite;
+}
