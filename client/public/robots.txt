@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login/
+
+# Sitemap
+Sitemap: https://umairkhan.dev/sitemap.xml
+
+# Crawl delay for large sites
+Crawl-delay: 10
+
+# Host
+Host: https://umairkhan.dev

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 // Mock projects data - will be replaced with API data later
-const projectsData = [
+export const projectsData = [
     {
         _id: '1',
         title: 'Wuddy - Social + Professional Network',

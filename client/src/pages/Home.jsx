@@ -1,9 +1,11 @@
-// import React from 'react';
-// import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import MolecularBackground from '../components/MolecularBackground';
 import HeroSection from '../components/HeroSection';
 import ProjectsSection from '../components/ProjectSection';
+import HomeSkills from '../components/HomeSkills';
+import HomeQuote from '../components/widgets/HomeQuotes';
+import HomeBlog from '../components/HomeBlog';
+import HomeContact from '../components/HomeContact';
 
 const Home = () => {
   const { isDark } = useTheme();
@@ -12,9 +14,9 @@ const Home = () => {
     <div className="relative min-h-screen overflow-x-hidden">
       {/* Custom Molecular Background */}
       <MolecularBackground />
-      
+
       {/* Subtle gradient overlay for depth */}
-      <div 
+      <div
         className="fixed inset-0 pointer-events-none z-[1]"
         style={{
           background: isDark
@@ -26,7 +28,16 @@ const Home = () => {
       {/* Main Content */}
       <div className="relative z-10">
         <HeroSection />
+
+        {/* Quote Widget - Between Hero and Skills */}
+        <div className="container mx-auto max-w-6xl px-4 mt-4 mb-4">
+          <HomeQuote />
+        </div>
+
+        <HomeSkills />
         <ProjectsSection />
+        <HomeBlog />
+        <HomeContact />
       </div>
     </div>
   );
