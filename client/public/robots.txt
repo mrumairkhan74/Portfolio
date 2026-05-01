@@ -5,10 +5,10 @@ Disallow: /admin/
 Disallow: /login/
 
 # Sitemap
-Sitemap: https://your-portfolio.vercel.app/sitemap.xml
+Sitemap: https://mrumairkhan-portfolio.vercel.app/sitemap.xml
 
 # Crawl delay for large sites
 Crawl-delay: 10
 
 # Host
-Host: https://your-portfolio.vercel.app
+Host: https://mrumairkhan-portfolio.vercel.app
