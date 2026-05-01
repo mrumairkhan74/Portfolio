@@ -24,12 +24,6 @@ const LoginPage = () => {
     password: ''
   });
 
-  // Demo credentials
-  const demoCredentials = {
-    email: 'admin@portfolio.com',
-    password: 'admin123'
-  };
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
@@ -40,30 +34,10 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === demoCredentials.email && formData.password === demoCredentials.password) {
-        // Store admin token (in real app, this would come from backend)
-        localStorage.setItem('adminToken', 'demo-token-12345');
-        localStorage.setItem('adminUser', JSON.stringify({
-          email: formData.email,
-          name: 'Admin User',
-          role: 'admin'
-        }));
-        navigate('/admin');
-      } else {
-        setError('Invalid email or password. Use demo credentials below.');
-      }
-      setLoading(false);
-    }, 1000);
+
   };
 
-  const fillDemoCredentials = () => {
-    setFormData({
-      email: demoCredentials.email,
-      password: demoCredentials.password
-    });
-  };
+
 
   return (
     <div className={`min-h-screen flex items-center justify-center py-20 px-4 ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
@@ -185,33 +159,9 @@ const LoginPage = () => {
               )}
             </button>
 
-            {/* Demo Credentials Button */}
-            <button
-              type="button"
-              onClick={fillDemoCredentials}
-              className={`w-full py-2 rounded-lg text-sm transition-all duration-300 ${
-                isDark
-                  ? 'text-cyber-cyan hover:bg-cyber-cyan/10'
-                  : 'text-cyan-600 hover:bg-cyan-50'
-              }`}
-            >
-              Use Demo Credentials
-            </button>
           </form>
 
-          {/* Demo Credentials Info */}
-          <div className={`mt-6 pt-6 border-t text-center ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Sparkles size={14} className="text-cyber-cyan" />
-              <span className={`text-xs ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
-                Demo Credentials
-              </span>
-            </div>
-            <code className={`text-xs ${isDark ? 'text-cyber-cyan' : 'text-cyan-700'}`}>
-              Email: admin@portfolio.com<br />
-              Password: admin123
-            </code>
-          </div>
+         
         </div>
 
         {/* Back to Home */}
