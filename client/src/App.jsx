@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useMobileOptimization } from './hooks/useMobileOptimization';
@@ -23,21 +23,42 @@ const PageLoader = () => (
 );
 
 function AppContent() {
-  const [showLoading, setShowLoading] = useState(true);
+  const [showLoading, setShowLoading] = useState(() => {
+    // Only show loading on first visit (desktop only)
+    const hasVisited = sessionStorage.getItem('hasVisited');
+    return !hasVisited;
+  });
+  
   const navigate = useNavigate();
+  const location = useLocation();
   const { isMobile } = useMobileOptimization();
+  const [pendingPath, setPendingPath] = useState(null);
+
+  // Store the intended path before showing loading
+  useEffect(() => {
+    if (showLoading && location.pathname !== '/') {
+      setPendingPath(location.pathname);
+      navigate('/', { replace: true });
+    }
+  }, []);
 
   // Skip loading screen on mobile devices
   useEffect(() => {
     if (isMobile) {
       setShowLoading(false);
-      navigate('/', { replace: true });
+      sessionStorage.setItem('hasVisited', 'true');
     }
-  }, [isMobile, navigate]);
+  }, [isMobile]);
 
   const handleLoadingComplete = () => {
     setShowLoading(false);
-    navigate('/', { replace: true });
+    sessionStorage.setItem('hasVisited', 'true');
+    
+    // Navigate to the intended path after loading completes
+    if (pendingPath && pendingPath !== '/') {
+      navigate(pendingPath, { replace: true });
+      setPendingPath(null);
+    }
   };
 
   // On mobile, don't show loading screen at all

@@ -22,10 +22,17 @@ import {
     User,
     ChevronLeft
 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutThunk, getMeThunk } from '../features/authSlice';
 
 const AdminDashboard = () => {
     const { isDark } = useTheme();
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+
+    // Get auth state from Redux
+    const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+
     const [activeTab, setActiveTab] = useState('overview');
     const [projects, setProjects] = useState([]);
     const [blogPosts, setBlogPosts] = useState([]);
@@ -46,6 +53,33 @@ const AdminDashboard = () => {
         liveUrl: ''
     });
 
+    // Check authentication
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const userData = await dispatch(getMeThunk()).unwrap();
+                if (!userData) {
+                    navigate('/login');
+                }
+            } catch (error) {
+                console.error('Not authenticated:', error);
+                navigate('/login');
+            }
+        };
+
+        if (!isAuthenticated && !user) {
+            checkAuth();
+        }
+    }, [dispatch, navigate, isAuthenticated, user]);
+
+    // Redirect if not authenticated
+    useEffect(() => {
+        if (!loading && !isAuthenticated && !user) {
+            console.log('No user found, redirecting to login');
+            navigate('/login');
+        }
+    }, [isAuthenticated, user, loading, navigate]);
+
     // Detect mobile
     useEffect(() => {
         const checkMobile = () => {
@@ -64,11 +98,6 @@ const AdminDashboard = () => {
 
     // Load data
     useEffect(() => {
-        const token = localStorage.getItem('adminToken');
-        if (!token) {
-            navigate('/login');
-        }
-
         const savedProjects = localStorage.getItem('admin_projects');
         if (savedProjects) {
             setProjects(JSON.parse(savedProjects));
@@ -84,12 +113,19 @@ const AdminDashboard = () => {
             setBlogPosts(initialBlogPosts);
             localStorage.setItem('admin_blogs', JSON.stringify(initialBlogPosts));
         }
-    }, [navigate]);
+    }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminUser');
-        navigate('/login');
+    const handleLogout = async () => {
+        try {
+            await dispatch(logoutThunk()).unwrap();
+            // Clear localStorage data
+            localStorage.removeItem('admin_projects');
+            localStorage.removeItem('admin_blogs');
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout error:', error);
+            navigate('/login');
+        }
     };
 
     const handleDelete = (type, id) => {
@@ -166,7 +202,7 @@ const AdminDashboard = () => {
             } else {
                 updatedBlog.id = Date.now().toString();
                 updatedBlog.date = new Date().toISOString().split('T')[0];
-                updatedBlog.author = 'Umair Khan';
+                updatedBlog.author = user?.name || 'Umair Khan';
                 updatedBlog.readTime = '5 min read';
                 updatedBlog.likes = 0;
                 updatedBlog.comments = 0;
@@ -182,7 +218,20 @@ const AdminDashboard = () => {
         setFormData({});
     };
 
-    // DEFINE stats FIRST (before using it)
+    // Show loading while checking auth
+    if (loading) {
+        return (
+            <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyber-cyan"></div>
+            </div>
+        );
+    }
+
+    // Don't render if not authenticated
+    if (!isAuthenticated && !user) {
+        return null;
+    }
+
     const stats = [
         { label: 'Total Projects', value: projects.length, icon: FolderGit2, color: 'from-cyber-cyan to-cyan-600' },
         { label: 'Blog Posts', value: blogPosts.length, icon: BookOpen, color: 'from-cyber-purple to-purple-600' },
@@ -190,7 +239,6 @@ const AdminDashboard = () => {
         { label: 'Total Comments', value: projects.reduce((sum, p) => sum + (p.comments?.length || 0), 0) + blogPosts.reduce((sum, b) => sum + (b.comments || 0), 0), icon: MessageCircle, color: 'from-cyan-500 to-blue-600' },
     ];
 
-    // THEN use it for visibleStats
     const visibleStats = isMobile ? stats.slice(0, 2) : stats;
 
     const tabs = [
@@ -199,8 +247,6 @@ const AdminDashboard = () => {
         { id: 'blogs', label: 'Blog Posts', icon: BookOpen },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     ];
-
-    const adminUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
 
     return (
         <div className={`min-h-screen ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
@@ -214,7 +260,7 @@ const AdminDashboard = () => {
                         >
                             <Menu size={isMobile ? 18 : 20} />
                         </button>
-                        
+
                         <div className={`hidden ${!isMobile && 'lg:flex'} items-center gap-2`}>
                             <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple flex items-center justify-center">
                                 <LayoutDashboard size={isMobile ? 12 : 16} className="text-white" />
@@ -230,19 +276,20 @@ const AdminDashboard = () => {
                     <div className="flex items-center gap-2 md:gap-3">
                         {!isMobile && (
                             <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple flex items-center justify-center">
-                                    <User size={isMobile ? 10 : 14} className="text-white" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-3 border-cyber-purple flex items-center justify-center">
+                                    <img src={user?.image?.url} size={isMobile ? 10 : 14} className="text-white object-cover rounded-full" />
                                 </div>
-                                <span className={`text-xs md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
-                                    {adminUser.email || 'Admin'}
+                                <span className={`flex flex-col items-start text-xs md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
+                                    {user?.name || 'Admin'}
+                                    <span className='text-red-500'>{user?.role}</span>
                                 </span>
                             </div>
                         )}
                         <button
                             onClick={handleLogout}
                             className={`p-1.5 md:p-2 rounded-lg transition-all duration-300 ${isDark
-                                    ? 'hover:bg-red-500/10 text-red-400'
-                                    : 'hover:bg-red-50 text-red-600'
+                                ? 'hover:bg-red-500/10 text-red-400'
+                                : 'hover:bg-red-50 text-red-600'
                                 }`}
                             title="Logout"
                         >
@@ -261,9 +308,8 @@ const AdminDashboard = () => {
             )}
 
             {/* Sidebar */}
-            <aside className={`fixed left-0 top-[49px] md:top-[57px] bottom-0 z-40 transition-all duration-300 ${
-                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            } w-56 md:w-64 ${isDark ? 'bg-gray-900' : 'bg-white'} shadow-2xl`}>
+            <aside className={`fixed left-0 top-[49px] md:top-[57px] bottom-0 z-40 transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                } w-56 md:w-64 ${isDark ? 'bg-gray-900' : 'bg-white'} shadow-2xl`}>
                 <div className="h-full flex flex-col">
                     <nav className="flex-1 p-3 md:p-4 space-y-1 overflow-y-auto">
                         {tabs.map(tab => (
@@ -273,13 +319,12 @@ const AdminDashboard = () => {
                                     setActiveTab(tab.id);
                                     if (isMobile) setSidebarOpen(false);
                                 }}
-                                className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-sm md:text-base ${
-                                    activeTab === tab.id
-                                        ? 'bg-gradient-to-r from-cyber-cyan/20 to-cyber-purple/20 text-cyber-cyan'
-                                        : isDark
-                                            ? 'text-text-secondary hover:bg-white/5'
-                                            : 'text-gray-600 hover:bg-gray-100'
-                                }`}
+                                className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-2.5 rounded-lg transition-all duration-300 text-sm md:text-base ${activeTab === tab.id
+                                    ? 'bg-gradient-to-r from-cyber-cyan/20 to-cyber-purple/20 text-cyber-cyan'
+                                    : isDark
+                                        ? 'text-text-secondary hover:bg-white/5'
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                    }`}
                             >
                                 <tab.icon size={isMobile ? 16 : 18} />
                                 <span className="text-xs md:text-sm font-medium">{tab.label}</span>
@@ -302,6 +347,7 @@ const AdminDashboard = () => {
             <main className={`min-h-screen transition-all duration-300 ${!isMobile && sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
                 <div className="pt-[49px] md:pt-[57px]">
                     <div className="p-3 md:p-6">
+                        {/* Rest of your content remains the same */}
                         {activeTab === 'overview' && (
                             <>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
@@ -488,8 +534,8 @@ const AdminDashboard = () => {
                                     value={formData.title}
                                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
-                                            ? 'bg-gray-700 border-gray-600 text-white'
-                                            : 'bg-gray-50 border-gray-300 text-gray-900'
+                                        ? 'bg-gray-700 border-gray-600 text-white'
+                                        : 'bg-gray-50 border-gray-300 text-gray-900'
                                         }`}
                                 />
                                 <button

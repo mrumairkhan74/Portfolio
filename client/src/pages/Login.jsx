@@ -1,21 +1,23 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { 
-  Lock, 
-  Mail, 
-  Eye, 
-  EyeOff, 
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
   LogIn,
   // Sparkles,
   Shield,
   AlertCircle
 } from 'lucide-react';
-
+import { loginThunk } from '../features/authSlice';
+import { useDispatch } from 'react-redux'
 const LoginPage = () => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const dispatch = useDispatch()
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -35,11 +37,6 @@ const LoginPage = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Demo credentials
-  const demoCredentials = {
-    email: 'admin@portfolio.com',
-    password: 'admin@123'
-  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -51,21 +48,17 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      if (formData.email === demoCredentials.email && formData.password === demoCredentials.password) {
-        localStorage.setItem('adminToken', 'demo-token-12345');
-        localStorage.setItem('adminUser', JSON.stringify({
-          email: formData.email,
-          name: 'Admin User',
-          role: 'admin'
-        }));
-        navigate('/admin');
-      } else {
-        setError('Invalid email or password');
-      }
-      setLoading(false);
-    }, 1000);
+
+    const result = await dispatch(loginThunk({
+      email: formData.email,
+      password: formData.password
+    })).unwrap()
+
+    if (!result) {
+      navigate('/')
+    } else {
+      navigate('/admin')
+    }
   };
 
   // const fillDemoCredentials = () => {
@@ -107,11 +100,10 @@ const LoginPage = () => {
 
         {/* Login Card - Reduced padding on mobile */}
         <div
-          className={`rounded-xl md:rounded-2xl p-5 md:p-8 backdrop-blur-sm ${
-            isDark
-              ? 'bg-gray-800/50 border border-cyber-cyan/20'
-              : 'bg-white/80 border border-gray-200'
-          } shadow-2xl`}
+          className={`rounded-xl md:rounded-2xl p-5 md:p-8 backdrop-blur-sm ${isDark
+            ? 'bg-gray-800/50 border border-cyber-cyan/20'
+            : 'bg-white/80 border border-gray-200'
+            } shadow-2xl`}
         >
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
             {/* Email Field */}
@@ -127,11 +119,10 @@ const LoginPage = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className={`w-full pl-9 md:pl-10 pr-3 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan transition-all ${
-                    isDark
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
+                  className={`w-full pl-9 md:pl-10 pr-3 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan transition-all ${isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-gray-50 border-gray-300 text-gray-900'
+                    }`}
                   placeholder="admin@portfolio.com"
                 />
               </div>
@@ -150,11 +141,10 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className={`w-full pl-9 md:pl-10 pr-9 md:pr-10 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan transition-all ${
-                    isDark
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'bg-gray-50 border-gray-300 text-gray-900'
-                  }`}
+                  className={`w-full pl-9 md:pl-10 pr-9 md:pr-10 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan transition-all ${isDark
+                    ? 'bg-gray-700 border-gray-600 text-white'
+                    : 'bg-gray-50 border-gray-300 text-gray-900'
+                    }`}
                   placeholder="••••••••"
                 />
                 <button

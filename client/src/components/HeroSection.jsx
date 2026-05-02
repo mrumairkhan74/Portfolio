@@ -198,7 +198,7 @@ const HeroSection = () => {
                             </motion.a>
 
                             <motion.a
-                                href="#contact"
+                                href="/contact"
                                 whileHover={!isMobile ? { scale: 1.05 } : {}}
                                 whileTap={{ scale: 0.95 }}
                                 className={`${isMobile ? 'px-4 py-2 text-sm' : 'px-6 py-3'} rounded-full font-semibold flex items-center gap-2 transition-all duration-300 border ${isDark
