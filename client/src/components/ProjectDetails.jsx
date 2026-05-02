@@ -3,7 +3,6 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { 
-//   Github, 
   ExternalLink, 
   Heart, 
   MessageCircle, 
@@ -33,7 +32,7 @@ const projectsData = [
   {
     _id: '1',
     title: 'Wuddy - Social + Professional Network',
-    description: 'Real-time chat, communities, and professional networking platform. Combines social features with team communication tools.',
+    description: 'Real-time chat, communities, and professional networking platform.',
     fullDescription: `Wuddy is a comprehensive social + professional networking web app where users can connect, chat, and collaborate in real time. It combines features of social platforms and team communication tools, making it easy for professionals to network and share ideas.
 
 Key Features:
@@ -44,7 +43,7 @@ Key Features:
 • Professional networking tools
 • Responsive design for all devices
 
-The platform handles thousands of concurrent users with optimized database queries and real-time updates. Built with performance and scalability in mind.`,
+The platform handles thousands of concurrent users with optimized database queries and real-time updates.`,
     technologies: ['React', 'Node.js', 'Express', 'MongoDB', 'Socket.io', 'Redux Toolkit', 'Tailwind CSS', 'JWT'],
     imageUrl: 'https://placehold.co/800x500/1a1a2e/00F0FF?text=Wuddy',
     images: [
@@ -77,9 +76,7 @@ Key Features:
 • Secure checkout with Stripe
 • User accounts and order history
 • Admin dashboard for inventory
-• Email notifications for orders
-
-Built for performance and scalability, GeariX handles product inventory management and secure payment processing.`,
+• Email notifications for orders`,
     technologies: ['React', 'Node.js', 'Express', 'MongoDB', 'Stripe API', 'Redux', 'CSS3'],
     imageUrl: 'https://placehold.co/800x500/1a1a2e/8B5CF6?text=GeariX',
     images: [
@@ -111,9 +108,7 @@ Key Features:
 • User presence indicators
 • Typing indicators
 • Message history
-• File sharing capabilities
-
-Built with Socket.io for real-time bidirectional communication and MongoDB for message persistence.`,
+• File sharing capabilities`,
     technologies: ['React', 'Express', 'MongoDB', 'Socket.io', 'Node.js', 'CSS3'],
     imageUrl: 'https://placehold.co/800x500/1a1a2e/EC4899?text=We+Chat',
     images: [
@@ -136,6 +131,14 @@ Built with Socket.io for real-time bidirectional communication and MongoDB for m
   }
 ];
 
+// Clock component
+const Clock = ({ size, className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
 const ProjectDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -150,9 +153,19 @@ const ProjectDetailsPage = () => {
   const [copied, setCopied] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [showShareMenu, setShowShareMenu] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
-    // Simulate API call
     setTimeout(() => {
       const foundProject = projectsData.find(p => p._id === id);
       if (foundProject) {
@@ -198,23 +211,23 @@ const ProjectDetailsPage = () => {
 
   const getTechIcon = (tech) => {
     const techLower = tech.toLowerCase();
-    if (techLower.includes('react')) return <Code2 size={16} />;
-    if (techLower.includes('node')) return <Server size={16} />;
-    if (techLower.includes('mongo')) return <Database size={16} />;
-    if (techLower.includes('express')) return <Layers size={16} />;
-    if (techLower.includes('socket')) return <Zap size={16} />;
-    if (techLower.includes('stripe')) return <Lock size={16} />;
-    if (techLower.includes('tailwind')) return <Layout size={16} />;
-    if (techLower.includes('responsive')) return <Smartphone size={16} />;
-    return <Code2 size={16} />;
+    if (techLower.includes('react')) return <Code2 size={isMobile ? 12 : 16} />;
+    if (techLower.includes('node')) return <Server size={isMobile ? 12 : 16} />;
+    if (techLower.includes('mongo')) return <Database size={isMobile ? 12 : 16} />;
+    if (techLower.includes('express')) return <Layers size={isMobile ? 12 : 16} />;
+    if (techLower.includes('socket')) return <Zap size={isMobile ? 12 : 16} />;
+    if (techLower.includes('stripe')) return <Lock size={isMobile ? 12 : 16} />;
+    if (techLower.includes('tailwind')) return <Layout size={isMobile ? 12 : 16} />;
+    if (techLower.includes('responsive')) return <Smartphone size={isMobile ? 12 : 16} />;
+    return <Code2 size={isMobile ? 12 : 16} />;
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className={`${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>Loading project...</p>
+          <div className="w-12 md:w-16 h-12 md:h-16 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className={`text-sm md:text-base ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>Loading project...</p>
         </div>
       </div>
     );
@@ -222,12 +235,12 @@ const ProjectDetailsPage = () => {
 
   if (!project) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="text-center">
-          <p className={`text-xl mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Project not found</p>
+          <p className={`text-lg md:text-xl mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Project not found</p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2 rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white"
+            className="px-5 md:px-6 py-2 text-sm md:text-base rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white"
           >
             Go Back Home
           </button>
@@ -237,25 +250,25 @@ const ProjectDetailsPage = () => {
   }
 
   return (
-    <div className={`min-h-screen py-20 px-4 ${isDark ? 'bg-dark-primary' : 'bg-gray-50'} `}>
+    <div className={`min-h-screen py-16 md:py-20 px-3 md:px-4 ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
       <div className="container mx-auto max-w-6xl">
-        {/* Back Button */}
+        {/* Back Button - Smaller on mobile */}
         <motion.button
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate('/')}
-          className={`flex items-center gap-2 mb-6 px-4 py-2 rounded-lg transition-all duration-300 ${
+          className={`flex items-center gap-1.5 md:gap-2 mb-4 md:mb-6 px-3 md:px-4 py-1.5 md:py-2 rounded-lg transition-all duration-300 text-sm md:text-base ${
             isDark
               ? 'bg-white/5 hover:bg-white/10 text-text-secondary'
               : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
           }`}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={isMobile ? 14 : 18} />
           Back to Projects
         </motion.button>
 
         {/* Main Content */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
           {/* Left Column - Images & Gallery */}
           <div className="lg:col-span-2">
             <motion.div
@@ -265,7 +278,7 @@ const ProjectDetailsPage = () => {
             >
               {/* Main Image */}
               <div
-                className={`rounded-2xl overflow-hidden mb-4 ${
+                className={`rounded-xl md:rounded-2xl overflow-hidden mb-3 md:mb-4 ${
                   isDark ? 'bg-gray-800' : 'bg-white'
                 } shadow-xl`}
               >
@@ -276,14 +289,14 @@ const ProjectDetailsPage = () => {
                 />
               </div>
 
-              {/* Thumbnail Gallery */}
+              {/* Thumbnail Gallery - Smaller on mobile */}
               {project.images && project.images.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
+                <div className="flex gap-2 md:gap-3 overflow-x-auto pb-2">
                   {project.images.map((img, idx) => (
                     <button
                       key={idx}
                       onClick={() => setActiveImage(idx)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      className={`flex-shrink-0 w-14 h-14 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                         activeImage === idx
                           ? 'border-cyber-cyan'
                           : isDark
@@ -304,13 +317,13 @@ const ProjectDetailsPage = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="space-y-6"
+            className="space-y-4 md:space-y-6"
           >
             {/* Title & Category */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2 flex-wrap">
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                  className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                     isDark
                       ? 'bg-cyber-cyan/20 text-cyber-cyan'
                       : 'bg-cyan-100 text-cyan-700'
@@ -320,7 +333,7 @@ const ProjectDetailsPage = () => {
                 </span>
                 {project.featured && (
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${
                       isDark
                         ? 'bg-cyber-pink/20 text-cyber-pink'
                         : 'bg-pink-100 text-pink-700'
@@ -330,47 +343,45 @@ const ProjectDetailsPage = () => {
                   </span>
                 )}
               </div>
-              <h1 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl md:text-4xl'} font-bold mb-2 md:mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 {project.title}
               </h1>
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1">
-                  <Calendar size={14} className="text-cyber-cyan" />
+              <div className="flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm">
+                <div className="flex items-center gap-0.5 md:gap-1">
+                  <Calendar size={isMobile ? 10 : 14} className="text-cyber-cyan" />
                   <span className={isDark ? 'text-text-secondary' : 'text-gray-600'}>{project.date}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <User size={14} className="text-cyber-purple" />
+                <div className="flex items-center gap-0.5 md:gap-1">
+                  <User size={isMobile ? 10 : 14} className="text-cyber-purple" />
                   <span className={isDark ? 'text-text-secondary' : 'text-gray-600'}>{project.role}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock size={14} className="text-cyber-pink" />
+                <div className="flex items-center gap-0.5 md:gap-1">
+                  <Clock size={isMobile ? 10 : 14} className="text-cyber-pink" />
                   <span className={isDark ? 'text-text-secondary' : 'text-gray-600'}>{project.duration}</span>
                 </div>
               </div>
             </div>
 
-            {/* Description */}
+            {/* Description - Shorter on mobile */}
             <div>
-              <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-base md:text-lg font-semibold mb-1.5 md:mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 About This Project
               </h3>
-              <div className={`text-sm leading-relaxed space-y-3 ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
-                {project.fullDescription.split('\n\n').map((para, idx) => (
-                  <p key={idx}>{para}</p>
-                ))}
+              <div className={`${isMobile ? 'text-xs' : 'text-sm'} leading-relaxed space-y-2 md:space-y-3 ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
+                <p>{isMobile ? project.fullDescription.substring(0, 200) + '...' : project.fullDescription.split('\n\n')[0]}</p>
               </div>
             </div>
 
-            {/* Tech Stack */}
+            {/* Tech Stack - Smaller tags on mobile */}
             <div>
-              <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              <h3 className={`text-base md:text-lg font-semibold mb-2 md:mb-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                 Technologies Used
               </h3>
-              <div className="flex flex-wrap gap-2">
-                {project.technologies.map((tech, idx) => (
+              <div className="flex flex-wrap gap-1.5 md:gap-2">
+                {(isMobile ? project.technologies.slice(0, 6) : project.technologies).map((tech, idx) => (
                   <span
                     key={idx}
-                    className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                    className={`flex items-center gap-0.5 md:gap-1 px-1.5 md:px-3 py-0.5 md:py-1 rounded-full text-[10px] md:text-sm ${
                       isDark
                         ? 'bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30'
                         : 'bg-cyan-100 text-cyan-700 border border-cyan-300'
@@ -383,26 +394,25 @@ const ProjectDetailsPage = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
+            {/* Action Buttons - Smaller on mobile */}
+            <div className="flex gap-2 md:gap-3">
               <a
                 href={project.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex-1 px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-300 ${
+                className={`flex-1 px-3 md:px-6 py-1.5 md:py-3 text-sm md:text-base rounded-full font-semibold flex items-center justify-center gap-1.5 md:gap-2 transition-all duration-300 ${
                   isDark
                     ? 'bg-gray-800 text-white hover:bg-gray-700'
                     : 'bg-gray-800 text-white hover:bg-gray-700'
                 }`}
               >
-                {/* <Github size={18} /> */}
                 View Code
               </a>
               <a
                 href={project.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 transition-all duration-300"
+                className="flex-1 px-3 md:px-6 py-1.5 md:py-3 text-sm md:text-base rounded-full font-semibold flex items-center justify-center gap-1.5 md:gap-2 transition-all duration-300"
                 style={{
                   background: isDark
                     ? 'linear-gradient(135deg, #00F0FF, #8B5CF6)'
@@ -410,16 +420,16 @@ const ProjectDetailsPage = () => {
                   color: 'white',
                 }}
               >
-                <ExternalLink size={18} />
+                <ExternalLink size={isMobile ? 14 : 18} />
                 Live Demo
               </a>
             </div>
 
-            {/* Like & Share */}
-            <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
+            {/* Like & Share - Smaller on mobile */}
+            <div className="flex items-center justify-between pt-3 md:pt-4 border-t" style={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }}>
               <button
                 onClick={handleLike}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-4 py-1 md:py-2 rounded-full transition-all duration-300 text-sm md:text-base ${
                   liked
                     ? 'text-cyber-pink'
                     : isDark
@@ -427,34 +437,34 @@ const ProjectDetailsPage = () => {
                     : 'text-gray-600 hover:text-pink-600'
                 }`}
               >
-                <Heart size={20} fill={liked ? '#EC4899' : 'none'} />
+                <Heart size={isMobile ? 16 : 20} fill={liked ? '#EC4899' : 'none'} />
                 <span>{likesCount} Likes</span>
               </button>
 
               <div className="relative">
                 <button
                   onClick={() => setShowShareMenu(!showShareMenu)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300 ${
+                  className={`flex items-center gap-1.5 md:gap-2 px-2 md:px-4 py-1 md:py-2 rounded-full transition-all duration-300 text-sm md:text-base ${
                     isDark
                       ? 'text-text-secondary hover:text-cyber-cyan'
                       : 'text-gray-600 hover:text-cyan-600'
                   }`}
                 >
-                  <Share2 size={18} />
+                  <Share2 size={isMobile ? 16 : 18} />
                   Share
                 </button>
 
                 {showShareMenu && (
                   <div
-                    className={`absolute right-0 mt-2 p-2 rounded-lg shadow-xl z-10 ${
+                    className={`absolute right-0 mt-2 p-1.5 md:p-2 rounded-lg shadow-xl z-10 ${
                       isDark ? 'bg-gray-800' : 'bg-white'
                     }`}
                   >
                     <button
                       onClick={handleCopyLink}
-                      className="flex items-center gap-2 px-3 py-2 rounded hover:bg-cyber-cyan/10 w-full"
+                      className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded hover:bg-cyber-cyan/10 w-full text-sm md:text-base"
                     >
-                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                      {copied ? <Check size={isMobile ? 14 : 16} /> : <Copy size={isMobile ? 14 : 16} />}
                       {copied ? 'Copied!' : 'Copy Link'}
                     </button>
                   </div>
@@ -464,42 +474,42 @@ const ProjectDetailsPage = () => {
           </motion.div>
         </div>
 
-        {/* Comments Section */}
+        {/* Comments Section - Reduced padding on mobile */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className={`mt-12 p-6 rounded-2xl ${
+          className={`mt-8 md:mt-12 p-4 md:p-6 rounded-xl md:rounded-2xl ${
             isDark ? 'bg-gray-800/50' : 'bg-white'
           }`}
         >
-          <h3 className={`text-xl font-semibold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-            <MessageCircle size={20} className="text-cyber-cyan" />
+          <h3 className={`text-base md:text-xl font-semibold mb-4 md:mb-6 flex items-center gap-1.5 md:gap-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            <MessageCircle size={isMobile ? 16 : 20} className="text-cyber-cyan" />
             Comments ({comments.length})
           </h3>
 
-          {/* Add Comment Form */}
-          <form onSubmit={handleAddComment} className="mb-8">
-            <div className="flex gap-3 mb-3">
+          {/* Add Comment Form - Smaller on mobile */}
+          <form onSubmit={handleAddComment} className="mb-6 md:mb-8">
+            <div className="flex gap-2 md:gap-3 mb-2 md:mb-3">
               <input
                 type="text"
                 placeholder="Your name (optional)"
                 value={commentAuthor}
                 onChange={(e) => setCommentAuthor(e.target.value)}
-                className={`flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${
+                className={`flex-1 px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${
                   isDark
                     ? 'bg-gray-700 border-gray-600 text-white focus:border-cyber-cyan'
                     : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-cyan-500'
                 }`}
               />
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2 md:gap-3">
               <textarea
                 placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                rows="3"
-                className={`flex-1 px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan resize-none ${
+                rows={isMobile ? 2 : 3}
+                className={`flex-1 px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan resize-none ${
                   isDark
                     ? 'bg-gray-700 border-gray-600 text-white focus:border-cyber-cyan'
                     : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-cyan-500'
@@ -507,47 +517,52 @@ const ProjectDetailsPage = () => {
               />
               <button
                 type="submit"
-                className="px-6 py-2 rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white font-semibold hover:opacity-90 transition-opacity"
+                className="px-3 md:px-6 py-1.5 md:py-2 rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white font-semibold hover:opacity-90 transition-opacity"
               >
-                <Send size={18} />
+                <Send size={isMobile ? 14 : 18} />
               </button>
             </div>
           </form>
 
           {/* Comments List */}
-          <div className="space-y-4 max-h-96 overflow-y-auto custom-scrollbar">
+          <div className="space-y-3 md:space-y-4 max-h-96 overflow-y-auto">
             {comments.length === 0 ? (
-              <p className={`text-center py-8 ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
+              <p className={`text-center py-6 md:py-8 text-sm md:text-base ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
                 No comments yet. Be the first to comment!
               </p>
             ) : (
-              comments.map((comment) => (
+              comments.slice(0, isMobile ? 3 : comments.length).map((comment) => (
                 <div
                   key={comment.id}
-                  className={`p-4 rounded-lg ${
+                  className={`p-3 md:p-4 rounded-lg ${
                     isDark ? 'bg-gray-700/50' : 'bg-gray-50'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple flex items-center justify-center text-white text-sm font-bold">
+                  <div className="flex justify-between items-start mb-1.5 md:mb-2">
+                    <div className="flex items-center gap-1.5 md:gap-2">
+                      <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple flex items-center justify-center text-white text-xs md:text-sm font-bold">
                         {comment.author[0].toUpperCase()}
                       </div>
                       <div>
-                        <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                        <span className={`text-sm md:text-base font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
                           {comment.author}
                         </span>
-                        <span className={`text-xs ml-2 ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
+                        <span className={`text-[10px] md:text-xs ml-1.5 md:ml-2 ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
                           {comment.date}
                         </span>
                       </div>
                     </div>
                   </div>
-                  <p className={`text-sm ml-10 ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
+                  <p className={`text-xs md:text-sm ml-7 md:ml-10 ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
                     {comment.text}
                   </p>
                 </div>
               ))
+            )}
+            {isMobile && comments.length > 3 && (
+              <p className={`text-center text-xs ${isDark ? 'text-text-secondary' : 'text-gray-500'} mt-2`}>
+                +{comments.length - 3} more comments
+              </p>
             )}
           </div>
         </motion.div>
@@ -555,13 +570,5 @@ const ProjectDetailsPage = () => {
     </div>
   );
 };
-
-// Add Clock component since it's used
-const Clock = ({ size, className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10"/>
-    <polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
 
 export default ProjectDetailsPage;

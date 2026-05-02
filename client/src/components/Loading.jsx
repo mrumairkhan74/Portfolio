@@ -1,4 +1,4 @@
-import  { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
 import HomeQuotes from './widgets/HomeQuotes';
 
@@ -9,8 +9,23 @@ const Loading = ({ onComplete }) => {
   const springRopeY = useSpring(ropeY, { stiffness: 500, damping: 50 });
   const [isDragging, setIsDragging] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Detect mobile
   useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Skip heavy cloth simulation on mobile
+  useEffect(() => {
+    // If on mobile, skip the entire cloth simulation
+    if (isMobile) return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     let animationId;
@@ -25,6 +40,7 @@ const Loading = ({ onComplete }) => {
 
     window.addEventListener('resize', resize);
 
+    // Reduced resolution for better performance (but still desktop)
     const cols = 70;
     const rows = 55;
     let points = [];
@@ -277,7 +293,7 @@ const Loading = ({ onComplete }) => {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(animationId);
     };
-  }, [dragAmount]);
+  }, [dragAmount, isMobile]);
 
   const handleDragStart = () => {
     setIsDragging(true);
@@ -302,6 +318,32 @@ const Loading = ({ onComplete }) => {
     }
   };
 
+  // Show simplified loading on mobile
+  if (isMobile) {
+    return (
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center"
+        style={{
+          background: 'radial-gradient(circle at 20% 0%, #0A0A0F 0%, #06060C 50%, #020206 100%)',
+        }}
+        initial={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Simplified loading spinner for mobile */}
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <div className="max-w-sm px-4">
+            <HomeQuotes />
+          </div>
+          <p className="text-cyber-cyan text-sm mt-4 font-mono">
+            Pull the rope on desktop for a magical experience ✨
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       className="fixed inset-0 z-50"
@@ -321,7 +363,7 @@ const Loading = ({ onComplete }) => {
       />
 
       {/* Quotes Widget - Bottom Left Corner */}
-      <div className="absolute top-8 left-8 z-20 max-w-sm">
+      <div className="absolute bottom-8 left-8 z-20 max-w-sm">
         <HomeQuotes />
       </div>
 

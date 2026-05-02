@@ -1,9 +1,20 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from '../context/ThemeContext';
 
 const MolecularBackground = () => {
   const canvasRef = useRef(null);
   const { isDark } = useTheme();
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -11,6 +22,14 @@ const MolecularBackground = () => {
     let animationId;
     let particles = [];
     let molecules = [];
+
+    // Mobile-optimized values
+    const particleCount = isMobile ? 30 : 80;
+    const moleculeCount = isMobile ? 3 : 8;
+    const connectionDistance = isMobile ? 60 : 100;
+    const particleSpeed = isMobile ? 0.3 : 0.5;
+    const particleRadius = isMobile ? { min: 1, max: 2 } : { min: 1.5, max: 3 };
+    const glowIntensity = isMobile ? 2 : 8;
 
     // Particle class (atoms)
     class Particle {
@@ -29,9 +48,11 @@ const MolecularBackground = () => {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         
-        // Glow effect
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = this.color;
+        // Reduced glow on mobile
+        if (!isMobile) {
+          ctx.shadowBlur = glowIntensity;
+          ctx.shadowColor = this.color;
+        }
         
         // Gradient fill for particles
         const gradient = ctx.createRadialGradient(
@@ -74,8 +95,10 @@ const MolecularBackground = () => {
           this.speedY *= -0.98;
         }
 
-        // Pulsing effect
-        this.radius = this.originalRadius + Math.sin(Date.now() * 0.003 * this.originalRadius) * 0.5;
+        // Pulsing effect (reduced on mobile)
+        if (!isMobile) {
+          this.radius = this.originalRadius + Math.sin(Date.now() * 0.003 * this.originalRadius) * 0.5;
+        }
       }
     }
 
@@ -94,7 +117,7 @@ const MolecularBackground = () => {
         // Update particle positions relative to center with rotation
         this.particles.forEach((particle, idx) => {
           const angle = this.rotation + (idx * Math.PI * 2 / this.particles.length);
-          const radius = 40;
+          const radius = isMobile ? 25 : 40;
           particle.x = this.centerX + Math.cos(angle) * radius;
           particle.y = this.centerY + Math.sin(angle) * radius;
         });
@@ -116,12 +139,15 @@ const MolecularBackground = () => {
             gradient.addColorStop(1, this.particles[j].color);
             
             ctx.strokeStyle = gradient;
-            ctx.lineWidth = 1.5;
-            ctx.shadowBlur = 3;
-            ctx.shadowColor = this.particles[i].color;
+            ctx.lineWidth = isMobile ? 1 : 1.5;
+            if (!isMobile) {
+              ctx.shadowBlur = 3;
+              ctx.shadowColor = this.particles[i].color;
+            }
             ctx.stroke();
           }
         }
+        ctx.shadowBlur = 0;
       }
     }
 
@@ -134,21 +160,19 @@ const MolecularBackground = () => {
       particles = [];
       molecules = [];
 
-      // Create free-floating particles (like chemical formulas)
-      const particleCount = 80;
+      // Create free-floating particles (reduced count on mobile)
       for (let i = 0; i < particleCount; i++) {
-        const radius = Math.random() * 3 + 1.5;
+        const radius = Math.random() * (particleRadius.max - particleRadius.min) + particleRadius.min;
         const color = colors[Math.floor(Math.random() * colors.length)];
-        const speedX = (Math.random() - 0.5) * 0.5;
-        const speedY = (Math.random() - 0.5) * 0.5;
+        const speedX = (Math.random() - 0.5) * particleSpeed;
+        const speedY = (Math.random() - 0.5) * particleSpeed;
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
         
         particles.push(new Particle(x, y, radius, color, speedX, speedY));
       }
 
-      // Create molecular structures (grouped particles)
-      const moleculeCount = 8;
+      // Create molecular structures (reduced on mobile)
       for (let i = 0; i < moleculeCount; i++) {
         const centerX = Math.random() * canvas.width;
         const centerY = Math.random() * canvas.height;
@@ -156,11 +180,12 @@ const MolecularBackground = () => {
         
         const moleculeParticles = [];
         for (let j = 0; j < particleCountInMolecule; j++) {
-          const radius = Math.random() * 2.5 + 1.5;
+          const radius = Math.random() * (particleRadius.max - particleRadius.min) + particleRadius.min;
           const color = colors[Math.floor(Math.random() * colors.length)];
           const angle = (j / particleCountInMolecule) * Math.PI * 2;
-          const x = centerX + Math.cos(angle) * 40;
-          const y = centerY + Math.sin(angle) * 40;
+          const radiusDistance = isMobile ? 25 : 40;
+          const x = centerX + Math.cos(angle) * radiusDistance;
+          const y = centerY + Math.sin(angle) * radiusDistance;
           
           moleculeParticles.push(new Particle(x, y, radius, color, 0, 0));
         }
@@ -177,12 +202,12 @@ const MolecularBackground = () => {
           const dy = particles[i].y - particles[j].y;
           const distance = Math.hypot(dx, dy);
           
-          if (distance < 100) {
+          if (distance < connectionDistance) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             
-            const opacity = (1 - distance / 100) * 0.3;
+            const opacity = (1 - distance / connectionDistance) * (isMobile ? 0.15 : 0.3);
             const gradient = ctx.createLinearGradient(
               particles[i].x, particles[i].y,
               particles[j].x, particles[j].y
@@ -191,7 +216,7 @@ const MolecularBackground = () => {
             gradient.addColorStop(1, particles[j].color);
             
             ctx.strokeStyle = gradient;
-            ctx.lineWidth = 0.8;
+            ctx.lineWidth = isMobile ? 0.5 : 0.8;
             ctx.globalAlpha = opacity;
             ctx.stroke();
             ctx.globalAlpha = 1;
@@ -200,8 +225,11 @@ const MolecularBackground = () => {
       }
     }
 
-    // Draw floating chemical formula text
+    // Draw floating chemical formula text (simplified on mobile)
     function drawFormulas() {
+      // Skip formulas on mobile for performance
+      if (isMobile) return;
+      
       const formulas = ['H₂O', 'CO₂', 'CH₄', 'C₆H₁₂O₆', 'NaCl', 'C₈H₁₀N₄O₂', 'H₂SO₄', 'NH₃'];
       const time = Date.now() * 0.001;
       
@@ -239,7 +267,7 @@ const MolecularBackground = () => {
       // Draw connections between all particles
       drawConnections();
       
-      // Draw floating formulas
+      // Draw floating formulas (skipped on mobile)
       drawFormulas();
       
       animationId = requestAnimationFrame(animate);
@@ -259,13 +287,13 @@ const MolecularBackground = () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationId);
     };
-  }, [isDark]);
+  }, [isDark, isMobile]);
 
   return (
     <canvas
       ref={canvasRef}
       className="fixed inset-0 w-full h-full pointer-events-none"
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 0, opacity: isMobile ? 0.4 : 1 }}
     />
   );
 };
