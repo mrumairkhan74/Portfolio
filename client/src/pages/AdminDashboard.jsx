@@ -45,12 +45,15 @@ const AdminDashboard = () => {
         description: '',
         excerpt: '',
         content: '',
+        fullDescription: '',
         technologies: '',
         imageUrl: '',
+        imageFile: null,
         category: '',
         tags: '',
         githubUrl: '',
-        liveUrl: ''
+        liveUrl: '',
+        isFeatured: false
     });
 
     // Check authentication
@@ -149,14 +152,28 @@ const AdminDashboard = () => {
             description: item.description || '',
             excerpt: item.excerpt || '',
             content: item.content || '',
+            fullDescription: item.fullDescription || '',
             technologies: item.technologies?.join(', ') || '',
             imageUrl: item.imageUrl || '',
+            imageFile: null,
             category: item.category || '',
             tags: item.tags?.join(', ') || '',
             githubUrl: item.githubUrl || '',
-            liveUrl: item.liveUrl || ''
+            liveUrl: item.liveUrl || '',
+            isFeatured: item.isFeatured || false
         });
         setShowModal(true);
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFormData({
+                ...formData,
+                imageFile: file,
+                imageUrl: URL.createObjectURL(file) // Preview URL
+            });
+        }
     };
 
     const handleSave = () => {
@@ -165,11 +182,13 @@ const AdminDashboard = () => {
                 ...editingItem,
                 title: formData.title,
                 description: formData.description,
+                fullDescription: formData.fullDescription,
                 technologies: formData.technologies.split(',').map(t => t.trim()),
-                imageUrl: formData.imageUrl,
+                imageUrl: formData.imageUrl || formData.imageFile?.name || '',
                 category: formData.category,
                 githubUrl: formData.githubUrl,
-                liveUrl: formData.liveUrl
+                liveUrl: formData.liveUrl,
+                isFeatured: formData.isFeatured
             };
 
             let updatedProjects;
@@ -191,7 +210,7 @@ const AdminDashboard = () => {
                 title: formData.title,
                 excerpt: formData.excerpt,
                 content: formData.content,
-                imageUrl: formData.imageUrl,
+                imageUrl: formData.imageUrl || formData.imageFile?.name || '',
                 category: formData.category,
                 tags: formData.tags.split(',').map(t => t.trim())
             };
@@ -215,7 +234,20 @@ const AdminDashboard = () => {
 
         setShowModal(false);
         setEditingItem(null);
-        setFormData({});
+        setFormData({
+            title: '',
+            description: '',
+            excerpt: '',
+            content: '',
+            fullDescription: '',
+            technologies: '',
+            imageUrl: '',
+            imageFile: null,
+            category: '',
+            tags: '',
+            githubUrl: '',
+            liveUrl: ''
+        });
     };
 
     // Show loading while checking auth
@@ -277,7 +309,7 @@ const AdminDashboard = () => {
                         {!isMobile && (
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-3 border-cyber-purple flex items-center justify-center">
-                                    <img src={user?.image?.url} size={isMobile ? 10 : 14} className="text-white object-cover rounded-full" />
+                                    <img src={user?.image?.url} alt={user?.name} className="text-white object-cover rounded-full w-full h-full" />
                                 </div>
                                 <span className={`flex flex-col items-start text-xs md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
                                     {user?.name || 'Admin'}
@@ -405,7 +437,17 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => {
                                             setEditingItem({ type: 'project' });
-                                            setFormData({});
+                                            setFormData({
+                                                title: '',
+                                                description: '',
+                                                fullDescription: '',
+                                                technologies: '',
+                                                imageUrl: '',
+                                                imageFile: null,
+                                                category: '',
+                                                githubUrl: '',
+                                                liveUrl: ''
+                                            });
                                             setShowModal(true);
                                         }}
                                         className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center gap-1 md:gap-2"
@@ -450,7 +492,15 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => {
                                             setEditingItem({ type: 'blog' });
-                                            setFormData({});
+                                            setFormData({
+                                                title: '',
+                                                excerpt: '',
+                                                content: '',
+                                                imageUrl: '',
+                                                imageFile: null,
+                                                category: '',
+                                                tags: ''
+                                            });
                                             setShowModal(true);
                                         }}
                                         className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center gap-1 md:gap-2"
@@ -528,6 +578,7 @@ const AdminDashboard = () => {
                             </h2>
 
                             <div className="space-y-2 md:space-y-3">
+                                {/* Title - Common for both */}
                                 <input
                                     type="text"
                                     placeholder="Title"
@@ -538,6 +589,141 @@ const AdminDashboard = () => {
                                         : 'bg-gray-50 border-gray-300 text-gray-900'
                                         }`}
                                 />
+
+                                {/* Project-specific fields */}
+                                {editingItem?.type === 'project' && (
+                                    <>
+                                        <input
+                                            type="text"
+                                            placeholder="Short Description"
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <textarea
+                                            placeholder="Full Description"
+                                            value={formData.fullDescription}
+                                            onChange={(e) => setFormData({ ...formData, fullDescription: e.target.value })}
+                                            rows={4}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Technologies (comma-separated)"
+                                            value={formData.technologies}
+                                            onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Category"
+                                            value={formData.category}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="url"
+                                            placeholder="GitHub URL"
+                                            value={formData.githubUrl}
+                                            onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="url"
+                                            placeholder="Live URL"
+                                            value={formData.liveUrl}
+                                            onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Blog-specific fields */}
+                                {editingItem?.type === 'blog' && (
+                                    <>
+                                        <input
+                                            type="text"
+                                            placeholder="Excerpt"
+                                            value={formData.excerpt}
+                                            onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <textarea
+                                            placeholder="Content"
+                                            value={formData.content}
+                                            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                            rows={6}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Category"
+                                            value={formData.category}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                        <input
+                                            type="text"
+                                            placeholder="Tags (comma-separated)"
+                                            value={formData.tags}
+                                            onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                                            className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                                ? 'bg-gray-700 border-gray-600 text-white'
+                                                : 'bg-gray-50 border-gray-300 text-gray-900'
+                                                }`}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Image upload - Common for both */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                    className={`w-full px-3 py-2 text-sm md:text-base rounded-lg border focus:outline-none focus:ring-2 focus:ring-cyber-cyan ${isDark
+                                        ? 'bg-gray-700 border-gray-600 text-white'
+                                        : 'bg-gray-50 border-gray-300 text-gray-900'
+                                        }`}
+                                />
+
+                                {/* Image preview */}
+                                {formData.imageUrl && (
+                                    <div className="mt-2">
+                                        <img
+                                            src={formData.imageUrl}
+                                            alt="Preview"
+                                            className="w-full h-32 object-cover rounded-lg"
+                                        />
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handleSave}
                                     className="w-full py-2 text-sm md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center justify-center gap-2"

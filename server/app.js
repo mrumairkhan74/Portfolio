@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const connectDB = require('./config/db')
-
+const routes = require('./routes/allRoutes')
 const app = express()
 
 app.use(express.json())
@@ -12,12 +12,13 @@ app.use(express.json())
 app.use(cors({
     origin: process.env.FRONTEND_URL,
     credentials: true,
-    // allowedHeaders: ['POST', 'GET', 'PUT', 'PATCH', 'DELETE']
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
 }))
 
 app.use(express.urlencoded({ extended: true }))
 
-// app.use('/api/v1',)
+app.use('/api/v1', routes)
 
 
 const PORT = process.env.PORT
