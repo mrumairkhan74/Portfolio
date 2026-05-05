@@ -1,30 +1,52 @@
+// hooks/useMobileOptimization.js
 import { useState, useEffect } from 'react';
 
 export const useMobileOptimization = () => {
   const [isMobile, setIsMobile] = useState(false);
-  const [isTablet, setIsTablet] = useState(false);
-  const [reduceAnimations, setReduceAnimations] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+  const [screenSize, setScreenSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
 
   useEffect(() => {
     const checkDevice = () => {
       const width = window.innerWidth;
-      const mobile = width < 768;
-      const tablet = width >= 768 && width < 1024;
+      const isMobileDevice = width < 768;
       
-      setIsMobile(mobile);
-      setIsTablet(tablet);
-      setWindowWidth(width);
+      // Check for low-end device by memory and cores
+      const isLowEnd = (
+        (navigator.deviceMemory && navigator.deviceMemory < 4) || // Less than 4GB RAM
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) || // Less than 4 cores
+        /Android [1-4]/.test(navigator.userAgent) || // Old Android
+        /iPhone OS [1-9]_/.test(navigator.userAgent) // Old iOS
+      );
       
-      // Check for reduced motion preference
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      setReduceAnimations(mobile || prefersReducedMotion);
+      setIsMobile(isMobileDevice);
+      setIsLowEndDevice(isLowEnd);
+      setScreenSize({ width, height: window.innerHeight });
+    };
+
+    checkDevice();
+    
+    let timeoutId;
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(checkDevice, 150);
     };
     
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
-  return { isMobile, isTablet, reduceAnimations, windowWidth };
+  return { 
+    isMobile, 
+    isLowEndDevice, 
+    screenSize,
+    isTablet: screenSize.width >= 768 && screenSize.width < 1024,
+    isDesktop: screenSize.width >= 1024,
+  };
 };

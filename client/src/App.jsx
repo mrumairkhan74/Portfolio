@@ -2,7 +2,7 @@ import { BrowserRouter, Route, Routes, useNavigate, useLocation } from 'react-ro
 import { lazy, Suspense, useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useMobileOptimization } from './hooks/useMobileOptimization';
-import Navbar from './components/Navbar'; 
+import Navbar from './components/Navbar';
 
 // Lazy load components
 const Loading = lazy(() => import('./components/Loading'));
@@ -18,7 +18,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-dark-primary">
-    <div className="w-12 h-12 border-4 border-cyber-cyan border-t-transparent rounded-full animate-spin" />
+    <img src="./loading.svg" className='animate-spin w-12 h-12' alt="" />
   </div>
 );
 
@@ -28,10 +28,10 @@ function AppContent() {
     const hasVisited = sessionStorage.getItem('hasVisited');
     return !hasVisited;
   });
-  
+
   const navigate = useNavigate();
   const location = useLocation();
-  const { isMobile } = useMobileOptimization();
+  // const { isMobile } = useMobileOptimization();
   const [pendingPath, setPendingPath] = useState(null);
 
   // Store the intended path before showing loading
@@ -43,17 +43,17 @@ function AppContent() {
   }, []);
 
   // Skip loading screen on mobile devices
-  useEffect(() => {
-    if (isMobile) {
-      setShowLoading(false);
-      sessionStorage.setItem('hasVisited', 'true');
-    }
-  }, [isMobile]);
+  // useEffect(() => {
+  //   if (isMobile) {
+  //     setShowLoading(false);
+  //     sessionStorage.setItem('hasVisited', 'true');
+  //   }
+  // }, [isMobile]);
 
   const handleLoadingComplete = () => {
     setShowLoading(false);
     sessionStorage.setItem('hasVisited', 'true');
-    
+
     // Navigate to the intended path after loading completes
     if (pendingPath && pendingPath !== '/') {
       navigate(pendingPath, { replace: true });
@@ -62,26 +62,26 @@ function AppContent() {
   };
 
   // On mobile, don't show loading screen at all
-  if (isMobile) {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Navbar />
-        <div className="pt-16">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/skills" element={<SkillsPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/project/:id" element={<ProjectDetailsPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:id" element={<BlogPost />} />
-          </Routes>
-        </div>
-      </Suspense>
-    );
-  }
+  // if (isMobile) {
+  //   return (
+  //     <Suspense fallback={<PageLoader />}>
+  //       <Navbar />
+  //       <div className="pt-16">
+  //         <Routes>
+  //           <Route path="/" element={<HomePage />} />
+  //           <Route path="/projects" element={<Projects />} />
+  //           <Route path="/skills" element={<SkillsPage />} />
+  //           <Route path="/contact" element={<ContactPage />} />
+  //           <Route path="/project/:id" element={<ProjectDetailsPage />} />
+  //           <Route path="/login" element={<LoginPage />} />
+  //           <Route path="/admin" element={<AdminDashboard />} />
+  //           <Route path="/blog" element={<Blog />} />
+  //           <Route path="/blog/:id" element={<BlogPost />} />
+  //         </Routes>
+  //       </div>
+  //     </Suspense>
+  //   );
+  // }
 
   return (
     <>
