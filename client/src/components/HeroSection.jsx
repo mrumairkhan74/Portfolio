@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import profileImg from '../../public/blue-bg-pfp.jpg'
+import resume from '../../public/UmairKhan-fullstack-Developer.pdf'
 import {
     Mail,
     Download,
@@ -178,7 +179,7 @@ const HeroSection = () => {
                         {/* CTA Buttons - smaller on mobile */}
                         <div className="flex flex-wrap gap-3 md:gap-4 pt-3 md:pt-4">
                             <motion.a
-                                href="/resume.pdf"
+                                href={resume}
                                 download
                                 whileHover={!isMobile ? { scale: 1.05 } : {}}
                                 whileTap={{ scale: 0.95 }}

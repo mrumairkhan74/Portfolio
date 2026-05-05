@@ -47,6 +47,10 @@
   ],
   "rewrites": [
     {
+      "source": "/google90c8e3dcd3d6f70f.html",
+      "destination": "/google90c8e3dcd3d6f70f.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
