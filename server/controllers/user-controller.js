@@ -1,7 +1,7 @@
-const userModel = require('../models/userModel')
+const userModel = require('../models/user-model')
 const bcrypt = require('bcrypt')
-const generateToken = require('../utils/generateToken')
-const uploadToCloudinary = require('../utils/uploadToCloudinary')
+const generateToken = require('../utils/generate-token')
+const uploadToCloudinary = require('../utils/upload-to-cloudinary')
 
 const hashedPassword = async (password) => {
     const salt = await bcrypt.genSalt(12)

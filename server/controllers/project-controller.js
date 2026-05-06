@@ -1,7 +1,7 @@
-const projectModel = require('../models/projectModel')
+const projectModel = require('../models/project-model')
 
 
-const uploadToCloudinary = require('../utils/uploadToCloudinary')
+const uploadToCloudinary = require('../utils/upload-to-cloudinary')
 
 
 const createProject = async (req, res, next) => {

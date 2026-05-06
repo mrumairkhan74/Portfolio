@@ -9,10 +9,10 @@ const {
     deleteProject,
     getProjectById,
     getProjects
-} = require('../controllers/ProjectController')
+} = require('../controllers/project-controller')
 
 
-const { verifyToken } = require('../middlewares/verifyToken')
+const { verifyToken } = require('../middlewares/verify-token')
 
 
 router.use(verifyToken)

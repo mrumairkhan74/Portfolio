@@ -3,8 +3,8 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit')
 
 
-const { register, loginUser, getMe } = require('../controllers/userController')
-const { verifyToken, verifyRefreshToken } = require('../middlewares/verifyToken')
+const { register, loginUser, getMe } = require('../controllers/user-controller')
+const { verifyToken, verifyRefreshToken } = require('../middlewares/verify-token')
 const upload = require('../config/upload');
 
 
