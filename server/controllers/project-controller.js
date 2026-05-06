@@ -105,26 +105,58 @@ const updateProject = async (req, res, next) => {
 }
 const getProjects = async (req, res, next) => {
     try {
-        const projects = await projectModel.find().sort({ createdAt: -1 }).lean()
-        if (projects.length < 0) {
-            return res.status(400).json({
+        const { title, page = 1, limit = 10 } = req.query;
+
+        // Build query object
+        const query = {};
+        if (title) {
+            query.title = { $regex: title, $options: 'i' }; // Case-insensitive search
+        }
+
+        // Calculate skip value for pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        // Get total count for pagination metadata
+        const totalProjects = await projectModel.countDocuments(query);
+
+        // Get paginated projects
+        const projects = await projectModel
+            .find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean();
+
+        if (projects.length === 0) {
+            return res.status(404).json({
                 success: false,
                 message: "No Projects Available right now"
-            })
+            });
         }
+
         return res.status(200).json({
             success: true,
             message: "All Projects below",
-            projects: projects
-        })
+            projects: projects,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(totalProjects / parseInt(limit)),
+                totalProjects: totalProjects,
+                limit: parseInt(limit)
+            }
+        });
     }
     catch (error) {
+        console.error(error); // Log the actual error for debugging
         return res.status(500).json({
-            success: true,
+            success: false, // Changed to false
             message: "Server Internal Error"
-        })
+        });
     }
-}
+};
+
+
+
 const getProjectById = async (req, res, next) => {
     try {
         const { id } = req.params;

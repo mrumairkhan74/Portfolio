@@ -3,7 +3,7 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit')
 
 
-const { register, loginUser, getMe } = require('../controllers/user-controller')
+const { register, loginUser, getMe, logout } = require('../controllers/user-controller')
 const { verifyToken, verifyRefreshToken } = require('../middlewares/verify-token')
 const upload = require('../config/upload');
 
@@ -21,6 +21,7 @@ router.post('/register', upload.single('image'), register)
 router.post('/login', strictLimit, loginUser)
 router.use(verifyToken)
 router.get('/me', getMe)
+router.post('/logout',logout)
 
 
 

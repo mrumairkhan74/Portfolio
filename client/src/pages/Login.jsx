@@ -12,7 +12,7 @@ import {
   AlertCircle,
   XCircle
 } from 'lucide-react';
-import { loginThunk } from '../features/authSlice';
+import { loginThunk } from '../features/auth/authSlice';
 import { useDispatch } from 'react-redux';
 
 const LoginPage = () => {
@@ -45,7 +45,7 @@ const LoginPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation
     if (!formData.email.trim()) {
       setError('Email is required');
@@ -55,7 +55,7 @@ const LoginPage = () => {
       setError('Password is required');
       return;
     }
-    
+
     setLoading(true);
     setError('');
 
@@ -64,15 +64,10 @@ const LoginPage = () => {
         email: formData.email,
         password: formData.password
       })).unwrap();
-
-      if (result) {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigate('/admin')
     } catch (err) {
       console.error("Login Error:", err);
-      
+
       // Handle different error types
       if (err?.message) {
         setError(err.message);
@@ -244,10 +239,10 @@ const LoginPage = () => {
         <div className="text-center mt-5 md:mt-6">
           <button
             onClick={() => navigate('/')}
-            className={`text-xs md:text-sm transition-all duration-300 ${isDark 
-              ? 'text-text-secondary hover:text-cyber-cyan' 
+            className={`text-xs md:text-sm transition-all duration-300 ${isDark
+              ? 'text-text-secondary hover:text-cyber-cyan'
               : 'text-gray-500 hover:text-cyan-600'
-            }`}
+              }`}
           >
             ← Back to Portfolio
           </button>

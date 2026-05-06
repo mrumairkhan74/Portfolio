@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
-import { projectsData as initialProjects } from '../components/ProjectSection';
-import { blogPosts as initialBlogPosts } from '../data/blogData';
+import { useDispatch, useSelector } from 'react-redux';
 import {
     LayoutDashboard,
     FolderGit2,
@@ -19,27 +18,50 @@ import {
     ChevronRight,
     BarChart3,
     Menu,
-    User,
-    ChevronLeft
+    ChevronLeft,
+    User
 } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
-import { logoutThunk, getMeThunk } from '../features/authSlice';
+
+// Import thunks
+import {
+    fetchAllBlogsThunk,
+    createBlogThunk,
+    updateBlogThunk,
+    deleteBlogThunk,
+} from '../features/blog/blogSlice';
+import {
+    fetchAllProjectsThunk,
+    createProjectThunk,
+    updateProjectThunk,
+    deleteProjectThunk,
+} from '../features/projects/projectSlice';
+import { logoutThunk, getMeThunk } from '../features/auth/authSlice';
 
 const AdminDashboard = () => {
     const { isDark } = useTheme();
     const navigate = useNavigate();
     const dispatch = useDispatch();
 
-    // Get auth state from Redux
-    const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+    // Get state from Redux
+    const { user, isAuthenticated, loading: authLoading } = useSelector((state) => state.auth);
+    const {
+        projects = [],
+        pagination: projectPagination,
+        loading: projectsLoading,
+    } = useSelector((state) => state.projects || {});
+    const {
+        blogs = [],
+        pagination: blogPagination,
+        loading: blogsLoading,
+    } = useSelector((state) => state.blogs || {});
 
+    // State variables
     const [activeTab, setActiveTab] = useState('overview');
-    const [projects, setProjects] = useState([]);
-    const [blogPosts, setBlogPosts] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [isMobile, setIsMobile] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false); // IMPORTANT: Added this
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -56,32 +78,52 @@ const AdminDashboard = () => {
         isFeatured: false
     });
 
-    // Check authentication
+    // Pagination state
+    const [projectFilters, setProjectFilters] = useState({ page: 1, limit: 10 });
+    const [blogFilters, setBlogFilters] = useState({ page: 1, limit: 10 });
+
+    // Check authentication - FIXED VERSION
     useEffect(() => {
-        const checkAuth = async () => {
+        const initAuth = async () => {
+            // If already authenticated in Redux, don't check again
+            if (isAuthenticated && user) {
+                setAuthChecked(true);
+                return;
+            }
+
+            // Check if token exists in localStorage
+            const token = localStorage.getItem('token');
+            if (!token) {
+                // No token, redirect to login
+                navigate('/login');
+                return;
+            }
+
             try {
-                const userData = await dispatch(getMeThunk()).unwrap();
-                if (!userData) {
-                    navigate('/login');
-                }
+                // Try to get user data with the token
+                await dispatch(getMeThunk()).unwrap();
+                setAuthChecked(true);
             } catch (error) {
-                console.error('Not authenticated:', error);
+                console.error('Auth failed:', error);
+                localStorage.removeItem('token'); // Clear invalid token
                 navigate('/login');
             }
         };
 
-        if (!isAuthenticated && !user) {
-            checkAuth();
-        }
+        initAuth();
     }, [dispatch, navigate, isAuthenticated, user]);
 
-    // Redirect if not authenticated
+    // Fetch data when authenticated - ONLY ONE useEffect for data fetching
     useEffect(() => {
-        if (!loading && !isAuthenticated && !user) {
-            console.log('No user found, redirecting to login');
-            navigate('/login');
+        if (authChecked && (isAuthenticated || user)) {
+            if (activeTab === 'projects' || activeTab === 'overview') {
+                dispatch(fetchAllProjectsThunk(projectFilters));
+            }
+            if (activeTab === 'blogs' || activeTab === 'overview') {
+                dispatch(fetchAllBlogsThunk(blogFilters));
+            }
         }
-    }, [isAuthenticated, user, loading, navigate]);
+    }, [dispatch, activeTab, projectFilters, blogFilters, isAuthenticated, user, authChecked]);
 
     // Detect mobile
     useEffect(() => {
@@ -99,31 +141,10 @@ const AdminDashboard = () => {
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
-    // Load data
-    useEffect(() => {
-        const savedProjects = localStorage.getItem('admin_projects');
-        if (savedProjects) {
-            setProjects(JSON.parse(savedProjects));
-        } else {
-            setProjects(initialProjects);
-            localStorage.setItem('admin_projects', JSON.stringify(initialProjects));
-        }
-
-        const savedBlogs = localStorage.getItem('admin_blogs');
-        if (savedBlogs) {
-            setBlogPosts(JSON.parse(savedBlogs));
-        } else {
-            setBlogPosts(initialBlogPosts);
-            localStorage.setItem('admin_blogs', JSON.stringify(initialBlogPosts));
-        }
-    }, []);
-
     const handleLogout = async () => {
         try {
             await dispatch(logoutThunk()).unwrap();
-            // Clear localStorage data
-            localStorage.removeItem('admin_projects');
-            localStorage.removeItem('admin_blogs');
+            localStorage.removeItem('token'); // Clear token on logout
             navigate('/login');
         } catch (error) {
             console.error('Logout error:', error);
@@ -131,16 +152,20 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleDelete = (type, id) => {
+    const handleDelete = async (type, id) => {
         if (window.confirm('Are you sure you want to delete this?')) {
-            if (type === 'project') {
-                const updated = projects.filter(p => p.id !== id);
-                setProjects(updated);
-                localStorage.setItem('admin_projects', JSON.stringify(updated));
-            } else if (type === 'blog') {
-                const updated = blogPosts.filter(b => b.id !== id);
-                setBlogPosts(updated);
-                localStorage.setItem('admin_blogs', JSON.stringify(updated));
+            try {
+                if (type === 'project') {
+                    await dispatch(deleteProjectThunk(id)).unwrap();
+                    // Refresh the list
+                    dispatch(fetchAllProjectsThunk(projectFilters));
+                } else if (type === 'blog') {
+                    await dispatch(deleteBlogThunk(id)).unwrap();
+                    dispatch(fetchAllBlogsThunk(blogFilters));
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                alert('Failed to delete. Please try again.');
             }
         }
     };
@@ -171,69 +196,78 @@ const AdminDashboard = () => {
             setFormData({
                 ...formData,
                 imageFile: file,
-                imageUrl: URL.createObjectURL(file) // Preview URL
+                imageUrl: URL.createObjectURL(file)
             });
         }
     };
 
-    const handleSave = () => {
-        if (editingItem.type === 'project') {
-            const updatedProject = {
-                ...editingItem,
-                title: formData.title,
-                description: formData.description,
-                fullDescription: formData.fullDescription,
-                technologies: formData.technologies.split(',').map(t => t.trim()),
-                imageUrl: formData.imageUrl || formData.imageFile?.name || '',
-                category: formData.category,
-                githubUrl: formData.githubUrl,
-                liveUrl: formData.liveUrl,
-                isFeatured: formData.isFeatured
-            };
+    const handleSave = async () => {
+        try {
+            // Prepare FormData for file upload
+            const submitData = new FormData();
 
-            let updatedProjects;
-            if (editingItem.id) {
-                updatedProjects = projects.map(p => p.id === editingItem.id ? updatedProject : p);
-            } else {
-                updatedProject.id = Date.now().toString();
-                updatedProject.date = new Date().toISOString().split('T')[0];
-                updatedProject.likes = 0;
-                updatedProject.comments = [];
-                updatedProjects = [updatedProject, ...projects];
+            if (editingItem.type === 'project') {
+                submitData.append('title', formData.title);
+                submitData.append('description', formData.description);
+                submitData.append('fullDescription', formData.fullDescription);
+                submitData.append('technologies', formData.technologies);
+                submitData.append('category', formData.category);
+                submitData.append('githubUrl', formData.githubUrl);
+                submitData.append('liveUrl', formData.liveUrl);
+                submitData.append('isFeatured', formData.isFeatured);
+                if (formData.imageFile) {
+                    submitData.append('image', formData.imageFile);
+                }
+
+                if (editingItem._id) {
+                    // Update existing project
+                    await dispatch(updateProjectThunk({
+                        id: editingItem._id,
+                        updateData: submitData
+                    })).unwrap();
+                } else {
+                    // Create new project
+                    await dispatch(createProjectThunk(submitData)).unwrap();
+                }
+
+                // Refresh projects list
+                dispatch(fetchAllProjectsThunk(projectFilters));
+
+            } else if (editingItem.type === 'blog') {
+                submitData.append('title', formData.title);
+                submitData.append('excerpt', formData.excerpt);
+                submitData.append('content', formData.content);
+                submitData.append('category', formData.category);
+                submitData.append('tags', formData.tags);
+                if (formData.imageFile) {
+                    submitData.append('image', formData.imageFile);
+                }
+
+                if (editingItem._id) {
+                    // Update existing blog
+                    await dispatch(updateBlogThunk({
+                        id: editingItem._id,
+                        updateData: submitData
+                    })).unwrap();
+                } else {
+                    // Create new blog
+                    await dispatch(createBlogThunk(submitData)).unwrap();
+                }
+
+                // Refresh blogs list
+                dispatch(fetchAllBlogsThunk(blogFilters));
             }
 
-            setProjects(updatedProjects);
-            localStorage.setItem('admin_projects', JSON.stringify(updatedProjects));
-        } else if (editingItem.type === 'blog') {
-            const updatedBlog = {
-                ...editingItem,
-                title: formData.title,
-                excerpt: formData.excerpt,
-                content: formData.content,
-                imageUrl: formData.imageUrl || formData.imageFile?.name || '',
-                category: formData.category,
-                tags: formData.tags.split(',').map(t => t.trim())
-            };
-
-            let updatedBlogs;
-            if (editingItem.id) {
-                updatedBlogs = blogPosts.map(b => b.id === editingItem.id ? updatedBlog : b);
-            } else {
-                updatedBlog.id = Date.now().toString();
-                updatedBlog.date = new Date().toISOString().split('T')[0];
-                updatedBlog.author = user?.name || 'Umair Khan';
-                updatedBlog.readTime = '5 min read';
-                updatedBlog.likes = 0;
-                updatedBlog.comments = 0;
-                updatedBlogs = [updatedBlog, ...blogPosts];
-            }
-
-            setBlogPosts(updatedBlogs);
-            localStorage.setItem('admin_blogs', JSON.stringify(updatedBlogs));
+            setShowModal(false);
+            setEditingItem(null);
+            resetFormData();
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Failed to save. Please check your inputs and try again.');
         }
+    };
 
-        setShowModal(false);
-        setEditingItem(null);
+    const resetFormData = () => {
         setFormData({
             title: '',
             description: '',
@@ -246,12 +280,13 @@ const AdminDashboard = () => {
             category: '',
             tags: '',
             githubUrl: '',
-            liveUrl: ''
+            liveUrl: '',
+            isFeatured: false
         });
     };
 
-    // Show loading while checking auth
-    if (loading) {
+    // Show loading while checking auth - UPDATED CONDITION
+    if (authLoading || !authChecked) {
         return (
             <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyber-cyan"></div>
@@ -265,10 +300,10 @@ const AdminDashboard = () => {
     }
 
     const stats = [
-        { label: 'Total Projects', value: projects.length, icon: FolderGit2, color: 'from-cyber-cyan to-cyan-600' },
-        { label: 'Blog Posts', value: blogPosts.length, icon: BookOpen, color: 'from-cyber-purple to-purple-600' },
-        { label: 'Total Likes', value: projects.reduce((sum, p) => sum + (p.likes || 0), 0) + blogPosts.reduce((sum, b) => sum + (b.likes || 0), 0), icon: Heart, color: 'from-cyber-pink to-pink-600' },
-        { label: 'Total Comments', value: projects.reduce((sum, p) => sum + (p.comments?.length || 0), 0) + blogPosts.reduce((sum, b) => sum + (b.comments || 0), 0), icon: MessageCircle, color: 'from-cyan-500 to-blue-600' },
+        { label: 'Total Projects', value: projectPagination?.totalProjects || 0, icon: FolderGit2, color: 'from-cyber-cyan to-cyan-600' },
+        { label: 'Blog Posts', value: blogPagination?.totalBlogs || 0, icon: BookOpen, color: 'from-cyber-purple to-purple-600' },
+        { label: 'Total Likes', value: 0, icon: Heart, color: 'from-cyber-pink to-pink-600' },
+        { label: 'Total Comments', value: 0, icon: MessageCircle, color: 'from-cyan-500 to-blue-600' },
     ];
 
     const visibleStats = isMobile ? stats.slice(0, 2) : stats;
@@ -279,6 +314,8 @@ const AdminDashboard = () => {
         { id: 'blogs', label: 'Blog Posts', icon: BookOpen },
         { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     ];
+
+    const isLoading = projectsLoading || blogsLoading;
 
     return (
         <div className={`min-h-screen ${isDark ? 'bg-dark-primary' : 'bg-gray-50'}`}>
@@ -306,14 +343,20 @@ const AdminDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-3">
-                        {!isMobile && (
+                        {!isMobile && user && (
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-3 border-cyber-purple flex items-center justify-center">
-                                    <img src={user?.image?.url} alt={user?.name} className="text-white object-cover rounded-full w-full h-full" />
+                                    {user.image?.url ? (
+                                        <img src={user.image.url} alt={user.name} className="object-cover rounded-full w-full h-full" />
+                                    ) : (
+                                        <div className="w-full h-full rounded-full bg-gradient-to-r from-cyber-cyan to-cyber-purple flex items-center justify-center">
+                                            <User size={20} className="text-white" />
+                                        </div>
+                                    )}
                                 </div>
                                 <span className={`flex flex-col items-start text-xs md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-600'}`}>
-                                    {user?.name || 'Admin'}
-                                    <span className='text-red-500'>{user?.role}</span>
+                                    {user.name || 'Admin'}
+                                    <span className='text-red-500 text-xs'>{user.role}</span>
                                 </span>
                             </div>
                         )}
@@ -379,7 +422,12 @@ const AdminDashboard = () => {
             <main className={`min-h-screen transition-all duration-300 ${!isMobile && sidebarOpen ? 'lg:ml-64' : 'ml-0'}`}>
                 <div className="pt-[49px] md:pt-[57px]">
                     <div className="p-3 md:p-6">
-                        {/* Rest of your content remains the same */}
+                        {isLoading && (
+                            <div className="flex justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyber-cyan"></div>
+                            </div>
+                        )}
+
                         {activeTab === 'overview' && (
                             <>
                                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
@@ -412,17 +460,20 @@ const AdminDashboard = () => {
                                         Recent Activity
                                     </h2>
                                     <div className="space-y-2 md:space-y-3">
-                                        {[...projects, ...blogPosts].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, isMobile ? 3 : 5).map((item, idx) => (
-                                            <div key={idx} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={`font-medium text-xs md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</p>
-                                                    <p className={`text-[10px] md:text-xs ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
-                                                        {item.date} • {item.category}
-                                                    </p>
+                                        {[...(projects || []), ...(blogs || [])]
+                                            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                                            .slice(0, isMobile ? 3 : 5)
+                                            .map((item, idx) => (
+                                                <div key={idx} className={`flex items-center justify-between p-2 md:p-3 rounded-lg ${isDark ? 'bg-gray-700/50' : 'bg-gray-50'}`}>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className={`font-medium text-xs md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{item.title}</p>
+                                                        <p className={`text-[10px] md:text-xs ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
+                                                            {new Date(item.createdAt).toLocaleDateString()} • {item.category}
+                                                        </p>
+                                                    </div>
+                                                    <ChevronRight size={isMobile ? 14 : 16} className="text-cyber-cyan flex-shrink-0 ml-2" />
                                                 </div>
-                                                <ChevronRight size={isMobile ? 14 : 16} className="text-cyber-cyan flex-shrink-0 ml-2" />
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 </div>
                             </>
@@ -437,17 +488,7 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => {
                                             setEditingItem({ type: 'project' });
-                                            setFormData({
-                                                title: '',
-                                                description: '',
-                                                fullDescription: '',
-                                                technologies: '',
-                                                imageUrl: '',
-                                                imageFile: null,
-                                                category: '',
-                                                githubUrl: '',
-                                                liveUrl: ''
-                                            });
+                                            resetFormData();
                                             setShowModal(true);
                                         }}
                                         className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center gap-1 md:gap-2"
@@ -458,8 +499,8 @@ const AdminDashboard = () => {
                                 </div>
 
                                 <div className="space-y-2 md:space-y-3">
-                                    {projects.slice(0, isMobile ? 5 : projects.length).map(project => (
-                                        <div key={project.id} className={`p-2 md:p-4 rounded-xl ${isDark ? 'bg-gray-800/50' : 'bg-white'} shadow flex justify-between items-center`}>
+                                    {(projects || []).map(project => (
+                                        <div key={project._id} className={`p-2 md:p-4 rounded-xl ${isDark ? 'bg-gray-800/50' : 'bg-white'} shadow flex justify-between items-center`}>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className={`font-semibold text-xs md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{project.title}</h3>
                                                 <p className={`text-[10px] md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>{project.category}</p>
@@ -468,17 +509,35 @@ const AdminDashboard = () => {
                                                 <button onClick={() => handleEdit('project', project)} className="p-1 md:p-2 rounded-lg hover:bg-cyber-cyan/10 text-cyber-cyan">
                                                     <Edit size={isMobile ? 14 : 16} />
                                                 </button>
-                                                <button onClick={() => handleDelete('project', project.id)} className="p-1 md:p-2 rounded-lg hover:bg-red-500/10 text-red-500">
+                                                <button onClick={() => handleDelete('project', project._id)} className="p-1 md:p-2 rounded-lg hover:bg-red-500/10 text-red-500">
                                                     <Trash2 size={isMobile ? 14 : 16} />
                                                 </button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                {isMobile && projects.length > 5 && (
-                                    <p className={`text-center text-xs mt-3 ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
-                                        +{projects.length - 5} more projects
-                                    </p>
+
+                                {/* Pagination for Projects */}
+                                {projectPagination && projectPagination.totalPages > 1 && (
+                                    <div className="flex justify-center gap-2 mt-6">
+                                        <button
+                                            onClick={() => setProjectFilters(prev => ({ ...prev, page: prev.page - 1 }))}
+                                            disabled={projectPagination.currentPage === 1}
+                                            className={`p-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow disabled:opacity-50`}
+                                        >
+                                            <ChevronLeft size={18} />
+                                        </button>
+                                        <span className={`px-4 py-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                                            Page {projectPagination.currentPage} of {projectPagination.totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setProjectFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                                            disabled={projectPagination.currentPage === projectPagination.totalPages}
+                                            className={`p-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow disabled:opacity-50`}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -492,15 +551,7 @@ const AdminDashboard = () => {
                                     <button
                                         onClick={() => {
                                             setEditingItem({ type: 'blog' });
-                                            setFormData({
-                                                title: '',
-                                                excerpt: '',
-                                                content: '',
-                                                imageUrl: '',
-                                                imageFile: null,
-                                                category: '',
-                                                tags: ''
-                                            });
+                                            resetFormData();
                                             setShowModal(true);
                                         }}
                                         className="px-2 md:px-4 py-1.5 md:py-2 text-xs md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center gap-1 md:gap-2"
@@ -511,8 +562,8 @@ const AdminDashboard = () => {
                                 </div>
 
                                 <div className="space-y-2 md:space-y-3">
-                                    {blogPosts.slice(0, isMobile ? 5 : blogPosts.length).map(post => (
-                                        <div key={post.id} className={`p-2 md:p-4 rounded-xl ${isDark ? 'bg-gray-800/50' : 'bg-white'} shadow flex justify-between items-center`}>
+                                    {(blogs || []).map(post => (
+                                        <div key={post._id} className={`p-2 md:p-4 rounded-xl ${isDark ? 'bg-gray-800/50' : 'bg-white'} shadow flex justify-between items-center`}>
                                             <div className="flex-1 min-w-0">
                                                 <h3 className={`font-semibold text-xs md:text-base truncate ${isDark ? 'text-white' : 'text-gray-900'}`}>{post.title}</h3>
                                                 <p className={`text-[10px] md:text-sm ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>{post.category}</p>
@@ -521,17 +572,35 @@ const AdminDashboard = () => {
                                                 <button onClick={() => handleEdit('blog', post)} className="p-1 md:p-2 rounded-lg hover:bg-cyber-cyan/10 text-cyber-cyan">
                                                     <Edit size={isMobile ? 14 : 16} />
                                                 </button>
-                                                <button onClick={() => handleDelete('blog', post.id)} className="p-1 md:p-2 rounded-lg hover:bg-red-500/10 text-red-500">
+                                                <button onClick={() => handleDelete('blog', post._id)} className="p-1 md:p-2 rounded-lg hover:bg-red-500/10 text-red-500">
                                                     <Trash2 size={isMobile ? 14 : 16} />
                                                 </button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                                {isMobile && blogPosts.length > 5 && (
-                                    <p className={`text-center text-xs mt-3 ${isDark ? 'text-text-secondary' : 'text-gray-500'}`}>
-                                        +{blogPosts.length - 5} more posts
-                                    </p>
+
+                                {/* Pagination for Blogs */}
+                                {blogPagination && blogPagination.totalPages > 1 && (
+                                    <div className="flex justify-center gap-2 mt-6">
+                                        <button
+                                            onClick={() => setBlogFilters(prev => ({ ...prev, page: prev.page - 1 }))}
+                                            disabled={blogPagination.currentPage === 1}
+                                            className={`p-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow disabled:opacity-50`}
+                                        >
+                                            <ChevronLeft size={18} />
+                                        </button>
+                                        <span className={`px-4 py-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'}`}>
+                                            Page {blogPagination.currentPage} of {blogPagination.totalPages}
+                                        </span>
+                                        <button
+                                            onClick={() => setBlogFilters(prev => ({ ...prev, page: prev.page + 1 }))}
+                                            disabled={blogPagination.currentPage === blogPagination.totalPages}
+                                            className={`p-2 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow disabled:opacity-50`}
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -574,11 +643,10 @@ const AdminDashboard = () => {
                             </button>
 
                             <h2 className={`text-lg md:text-xl font-bold mb-3 md:mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                {editingItem?.id ? 'Edit' : 'Add New'} {editingItem?.type === 'project' ? 'Project' : 'Blog Post'}
+                                {editingItem?._id ? 'Edit' : 'Add New'} {editingItem?.type === 'project' ? 'Project' : 'Blog Post'}
                             </h2>
 
                             <div className="space-y-2 md:space-y-3">
-                                {/* Title - Common for both */}
                                 <input
                                     type="text"
                                     placeholder="Title"
@@ -590,7 +658,6 @@ const AdminDashboard = () => {
                                         }`}
                                 />
 
-                                {/* Project-specific fields */}
                                 {editingItem?.type === 'project' && (
                                     <>
                                         <input
@@ -656,7 +723,6 @@ const AdminDashboard = () => {
                                     </>
                                 )}
 
-                                {/* Blog-specific fields */}
                                 {editingItem?.type === 'blog' && (
                                     <>
                                         <input
@@ -702,7 +768,6 @@ const AdminDashboard = () => {
                                     </>
                                 )}
 
-                                {/* Image upload - Common for both */}
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -713,7 +778,6 @@ const AdminDashboard = () => {
                                         }`}
                                 />
 
-                                {/* Image preview */}
                                 {formData.imageUrl && (
                                     <div className="mt-2">
                                         <img
@@ -726,7 +790,8 @@ const AdminDashboard = () => {
 
                                 <button
                                     onClick={handleSave}
-                                    className="w-full py-2 text-sm md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center justify-center gap-2"
+                                    disabled={isLoading}
+                                    className="w-full py-2 text-sm md:text-base rounded-lg bg-gradient-to-r from-cyber-cyan to-cyber-purple text-white flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <Save size={isMobile ? 14 : 16} />
                                     Save

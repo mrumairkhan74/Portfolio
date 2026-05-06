@@ -11,10 +11,11 @@ const hashedPassword = async (password) => {
 
 const cookieOption = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'None',
-    path: '/'
-}
+    secure: process.env.NODE_ENV === 'production' || true, // Set to true for development too
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // Use 'Lax' for development
+    path: '/',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+};
 
 const accessToken_Max_AGE = 15 * 60 * 1000
 const refreshToken_Max_AGE = 30 * 24 * 60 * 60 * 1000
