@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
 import { useMobileOptimization } from '../hooks/useMobileOptimization';
 import profileImg from '../../public/blue-bg-pfp.jpg'
-import resume from '../../public/UmairKhan-fullstack-Developer.pdf'
+import resume from '../../public/UmairKhan-MERN-Developer.pdf'
 import {
     Mail,
     Download,
